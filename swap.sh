@@ -1,28 +1,30 @@
 #!/bin/bash
 
-SWAP_FILE="/swapfile"
-
 create_swap() {
-    if [ -f "$SWAP_FILE" ]; then
-        echo "Swap file already exists. Aborting creation."
-    else
-        read -p "Enter the size of the swap file in GB: " swap_size
-        echo "Creating swap file of size ${swap_size}G..."
-        sudo dd if=/dev/zero of=$SWAP_FILE bs=1M count=$(( swap_size * 1024 )) status=none
-        sudo chmod 600 $SWAP_FILE
-        sudo mkswap $SWAP_FILE > /dev/null
-        sudo swapon $SWAP_FILE > /dev/null
-        echo "$SWAP_FILE none swap sw 0 0" | sudo tee -a /etc/fstab > /dev/null
-        echo "Swap file created successfully."
-    fi
+    read -p "Enter the name of the swap file (e.g., swapfile1): " swap_name
+    SWAP_FILE="/$swap_name"
+
+    read -p "Enter the size of the swap file in GB: " swap_size
+    echo "Creating swap file of size ${swap_size}G..."
+    sudo dd if=/dev/zero of=$SWAP_FILE bs=1M count=$(( swap_size * 1024 )) status=none
+    sudo chmod 600 $SWAP_FILE
+    sudo mkswap $SWAP_FILE > /dev/null
+    sudo swapon $SWAP_FILE > /dev/null
+    echo "$SWAP_FILE none swap sw 0 0" | sudo tee -a /etc/fstab > /dev/null
+    echo "Swap file created successfully."
 }
 
 delete_swap() {
+    show_swap   
+    if sudo swapon --show | grep -q 'NAME'; then
+    read -p "Enter the name of the swap file to delete (e.g., swapfile1): " swap_name
+    SWAP_FILE="/$swap_name"
+    fi
     if [ -f "$SWAP_FILE" ]; then
         echo "Deleting swap file..."
         sudo swapoff $SWAP_FILE
         sudo rm $SWAP_FILE
-        sudo sed -i '\|$SWAP_FILE|d' /etc/fstab
+        sudo sed -i "\|$SWAP_FILE|d" /etc/fstab
         echo "Swap file deleted successfully."
     else
         echo "No swap file found to delete."
@@ -48,7 +50,7 @@ show_swap() {
     else
         echo "No swap file found."
     fi
-    }
+}
 
 while true; do
     # Main menu
